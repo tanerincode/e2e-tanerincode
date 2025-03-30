@@ -1,0 +1,49 @@
+# Jenkins Configuration for e2e-profile
+pipeline:
+  name: e2e-profile-ci-cd
+  displayName: "e2e-profile CI/CD Pipeline"
+  description: "CI/CD Pipeline for the e2e-profile service"
+
+environments:
+  - name: dev
+    namespace: dev
+    valuesFile: ../deployment/charts/e2e-profile/values-dev.yaml
+    autoDeployBranches:
+      - develop
+      - feature/*
+    
+  - name: staging
+    namespace: staging
+    valuesFile: ../deployment/charts/e2e-profile/values-staging.yaml
+    autoDeployBranches:
+      - develop
+    
+  - name: production
+    namespace: prod
+    valuesFile: ../deployment/charts/e2e-profile/values-prod.yaml
+    autoDeployBranches:
+      - main
+    requireApproval: true
+
+testing:
+  unitTestsCommand: "go test -v ./..."
+  integrationTestsCommand: "go test -v -tags=integration ./..."
+  codeCoverageThreshold: 70
+  
+security:
+  scanImages: true
+  scanDependencies: true
+  criticalVulnThreshold: 0
+  highVulnThreshold: 3
+  
+notifications:
+  slack:
+    channel: "#e2e-profile-builds"
+    notifyOnSuccess: true
+    notifyOnFailure: true
+  
+  email:
+    recipients:
+      - devops@example.com
+    notifyOnFailure: true
+    notifyOnSuccess: false
