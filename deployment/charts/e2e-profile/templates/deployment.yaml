@@ -61,7 +61,7 @@ spec:
               value: {{ .Values.database.host | quote }}
               {{- end }}
             - name: DB_PORT
-              value: "5432"
+              value: {{ .Values.database.port | quote }}
             - name: DB_NAME
               {{- if .Values.postgresql.enabled }}
               value: {{ .Values.postgresql.auth.database | quote }}
