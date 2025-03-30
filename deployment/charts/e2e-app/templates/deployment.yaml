@@ -38,11 +38,19 @@ spec:
             - name: MOCK_DB
               value: {{ .Values.config.mockDB | quote }}
             - name: DB_HOST
+              {{- if .Values.postgresql.enabled }}
+              value: {{ include "e2e-app.fullname" . }}-postgresql
+              {{- else }}
               value: {{ .Values.database.host | quote }}
+              {{- end }}
             - name: DB_PORT
               value: {{ .Values.database.port | quote }}
             - name: DB_NAME
+              {{- if .Values.postgresql.enabled }}
+              value: {{ .Values.postgresql.auth.database | quote }}
+              {{- else }}
               value: {{ .Values.database.name | quote }}
+              {{- end }}
             - name: DB_USER
               valueFrom:
                 secretKeyRef:
