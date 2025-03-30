@@ -2,6 +2,7 @@ package config
 
 import (
 	"os"
+	"strconv"
 )
 
 // Config holds the application configuration
@@ -9,6 +10,7 @@ type Config struct {
 	AuthServiceURL string
 	AuthGRPCAddr   string
 	Port           string
+	MockDB         bool
 
 	// Database configuration
 	DBHost     string
@@ -24,6 +26,7 @@ func New() *Config {
 		AuthServiceURL: getEnv("AUTH_SERVICE_URL", "http://localhost:8080"),
 		AuthGRPCAddr:   getEnv("AUTH_GRPC_ADDR", "localhost:50051"),
 		Port:           getEnv("PORT", "8081"),
+		MockDB:         getBoolEnv("MOCK_DB", false),
 
 		// Database defaults - typically overridden by environment in production
 		DBHost:     getEnv("DB_HOST", "localhost"),
@@ -38,6 +41,15 @@ func New() *Config {
 func getEnv(key, fallback string) string {
 	if value, exists := os.LookupEnv(key); exists {
 		return value
+	}
+	return fallback
+}
+
+// Helper to get boolean environment variable with fallback
+func getBoolEnv(key string, fallback bool) bool {
+	valStr := getEnv(key, "")
+	if val, err := strconv.ParseBool(valStr); err == nil {
+		return val
 	}
 	return fallback
 }

@@ -11,12 +11,17 @@ import (
 	"gorm.io/gorm/logger"
 )
 
+// IsMockDBEnabled returns whether the mock DB is enabled
+func IsMockDBEnabled(cfg *config.Config) bool {
+	return cfg.AppEnv == "development" && cfg.MockDB
+}
+
 // NewDB creates a new database connection
 func NewDB(cfg *config.Config) (*gorm.DB, error) {
 	// Check if we're in dev mode with mock DB
-	if cfg.AppEnv == "development" && cfg.MockDB {
+	if IsMockDBEnabled(cfg) {
 		log.Println("Using in-memory mock database for development")
-		return setupMockDB()
+		return nil, nil // Return nil to trigger mock implementations
 	}
 
 	dsn := fmt.Sprintf("host=%s user=%s password=%s dbname=%s port=%s sslmode=disable",
@@ -50,23 +55,10 @@ func NewDB(cfg *config.Config) (*gorm.DB, error) {
 		// If in development mode, we can fall back to mock DB even if mock wasn't explicitly enabled
 		if cfg.AppEnv == "development" {
 			log.Println("Failed to connect to database in development mode. Falling back to mock database")
-			return setupMockDB()
+			return nil, nil // Return nil to trigger mock implementations
 		}
 		return nil, fmt.Errorf("failed to connect to database after %d attempts: %w", maxRetries, err)
 	}
 
 	return db, nil
-}
-
-// setupMockDB creates an in-memory mock database for development
-func setupMockDB() (*gorm.DB, error) {
-	// For a real implementation, you would use an SQLite in-memory database or a mock implementation
-	// For now, we'll just return a stub with a message
-	log.Println("Mock database not fully implemented. This is a placeholder!")
-
-	// Placeholder for the actual implementation
-	// In a real implementation, you'd return something like:
-	// return gorm.Open(sqlite.Open("file::memory:?cache=shared"), &gorm.Config{})
-
-	return nil, fmt.Errorf("mock database implementation pending")
 }

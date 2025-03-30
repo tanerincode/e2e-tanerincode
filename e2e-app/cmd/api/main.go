@@ -12,6 +12,7 @@ import (
 	"github.com/tanerincode/e2e-app/internal/grpc/server"
 	"github.com/tanerincode/e2e-app/internal/handler"
 	"github.com/tanerincode/e2e-app/internal/repository"
+	"github.com/tanerincode/e2e-app/internal/repository/mock"
 	"github.com/tanerincode/e2e-app/internal/service"
 	"google.golang.org/grpc"
 )
@@ -20,14 +21,24 @@ func main() {
 	// Initialize configuration
 	cfg := config.New()
 
+	// Initialize repositories
+	var userRepo repository.UserRepository
+
 	// Initialize database
 	db, err := repository.NewDB(cfg)
 	if err != nil {
 		log.Fatalf("Failed to connect to database: %v", err)
 	}
 
-	// Initialize repositories
-	userRepo := repository.NewUserRepository(db)
+	// Set up repositories based on DB availability
+	if db == nil {
+		// DB connection failed or mock mode is enabled
+		log.Println("Using mock repositories")
+		userRepo = mock.GetMockUserRepository()
+	} else {
+		// Real DB connection succeeded
+		userRepo = repository.NewUserRepository(db)
+	}
 
 	// Initialize services
 	authService := service.NewAuthService(userRepo, cfg)

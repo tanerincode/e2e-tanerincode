@@ -4,8 +4,8 @@ import (
 	"context"
 	"errors"
 
-	"github.com/tanerincode/e2e-app/internal/model"
 	"github.com/google/uuid"
+	"github.com/tanerincode/e2e-app/internal/model"
 	"gorm.io/gorm"
 )
 
@@ -15,6 +15,7 @@ type userRepository struct {
 
 // NewUserRepository creates a new instance of UserRepository
 func NewUserRepository(db *gorm.DB) UserRepository {
+	// For mock implementation, handle this in main wiring
 	return &userRepository{
 		db: db,
 	}
