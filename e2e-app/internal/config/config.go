@@ -2,11 +2,16 @@ package config
 
 import (
 	"os"
+	"strconv"
 	"time"
 )
 
 // Config holds the application configuration
 type Config struct {
+	// Application
+	AppEnv string
+	MockDB bool
+
 	// HTTP Server
 	Port string
 
@@ -18,11 +23,11 @@ type Config struct {
 	DBName     string
 
 	// JWT
-	JWTSecret       string
-	JWTExpiration   string
-	RefreshSecret   string
+	JWTSecret         string
+	JWTExpiration     string
+	RefreshSecret     string
 	RefreshExpiration string
-	
+
 	// gRPC
 	GRPCPort string
 }
@@ -30,6 +35,10 @@ type Config struct {
 // New creates a new Config with values from environment or defaults
 func New() *Config {
 	return &Config{
+		// Application settings
+		AppEnv: getEnv("APP_ENV", "development"),
+		MockDB: getBoolEnv("MOCK_DB", false),
+
 		Port: getEnv("PORT", "8080"),
 
 		// Database settings
@@ -40,11 +49,11 @@ func New() *Config {
 		DBName:     getEnv("DB_NAME", "e2e_app"),
 
 		// JWT settings
-		JWTSecret:       getEnv("JWT_SECRET", "your-secret-key"),
-		JWTExpiration:   getEnv("JWT_EXPIRATION", "24h"),
-		RefreshSecret:   getEnv("REFRESH_SECRET", "your-refresh-secret-key"),
+		JWTSecret:         getEnv("JWT_SECRET", "your-secret-key"),
+		JWTExpiration:     getEnv("JWT_EXPIRATION", "24h"),
+		RefreshSecret:     getEnv("REFRESH_SECRET", "your-refresh-secret-key"),
 		RefreshExpiration: getEnv("REFRESH_EXPIRATION", "168h"),
-		
+
 		// gRPC settings
 		GRPCPort: getEnv("GRPC_PORT", "50051"),
 	}
@@ -72,6 +81,18 @@ func (c *Config) GetRefreshExpiration() time.Duration {
 func getEnv(key, fallback string) string {
 	if value, exists := os.LookupEnv(key); exists {
 		return value
+	}
+	return fallback
+}
+
+// Helper to get boolean environment variable with fallback
+func getBoolEnv(key string, fallback bool) bool {
+	if value, exists := os.LookupEnv(key); exists {
+		parsedValue, err := strconv.ParseBool(value)
+		if err != nil {
+			return fallback
+		}
+		return parsedValue
 	}
 	return fallback
 }

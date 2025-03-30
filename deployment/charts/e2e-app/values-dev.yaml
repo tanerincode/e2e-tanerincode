@@ -4,7 +4,7 @@ replicaCount: 1
 image:
   repository: e2e-app
   tag: latest
-  pullPolicy: Always
+  pullPolicy: Never
 
 service:
   type: ClusterIP
@@ -43,6 +43,30 @@ config:
   readinessCheckPath: "/ready"
   maxRequestsPerSecond: "50"
   timeoutSeconds: "30"
+  mockDB: "false"  # Disable mock database for development
+
+# Database configuration for development
+database:
+  enabled: true  # Enable PostgreSQL dependency in development
+  type: postgres
+  host: "{{ .Release.Name }}-postgresql"
+  port: 5432
+  name: e2e_app_dev
+  user: postgres
+  password: postgres
+  existingSecret: ""
+
+# Configure PostgreSQL for development
+postgresql:
+  enabled: true  # Enable PostgreSQL in development
+  auth:
+    username: postgres
+    password: postgres
+    database: e2e_app_dev
+  primary:
+    persistence:
+      enabled: true
+      size: 1Gi
 
 # Development secrets (replace with actual values)
 secrets:

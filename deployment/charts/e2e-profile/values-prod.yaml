@@ -55,24 +55,37 @@ readinessProbe:
   timeoutSeconds: 5
   failureThreshold: 3
 
-# Environment variables for the production environment
-env:
-  - name: PORT
-    value: "8081"
-  - name: AUTH_SERVICE_URL
-    value: "http://e2e-app:8080"
-  - name: AUTH_GRPC_ADDR
-    value: "e2e-app:50051"
+# Application configuration for production environment
+config:
+  APP_ENV: production
+  MOCK_DB: "false"
+  LOG_LEVEL: info
+  PORT: 8081
+  AUTH_SERVICE_URL: "http://e2e-app:8080"
+  AUTH_GRPC_ADDR: "e2e-app:50051"
 
 # Database configuration for production
 database:
+  existingSecret: ""
+
+# Enable PostgreSQL dependency for production with increased resources
+postgresql:
   enabled: true
-  type: postgres
-  host: postgres-profile
-  port: 5432
-  name: e2e_profile
-  user: prod_user
-  existingSecret: profile-db-credentials-prod
+  auth:
+    username: prod_user
+    password: "" # This should be set securely, e.g. via CI/CD variables
+    database: e2e_profile
+  primary:
+    persistence:
+      size: 10Gi
+      storageClass: "standard"
+    resources:
+      requests:
+        cpu: 500m
+        memory: 512Mi
+      limits:
+        cpu: 1000m
+        memory: 1Gi
 
 # Production specific autoscaling settings
 autoscaling:

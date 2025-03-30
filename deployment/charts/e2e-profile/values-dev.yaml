@@ -4,7 +4,7 @@ replicaCount: 1
 image:
   repository: e2e-profile
   tag: latest
-  pullPolicy: Always
+  pullPolicy: Never
 
 service:
   type: ClusterIP
@@ -49,21 +49,26 @@ readinessProbe:
   timeoutSeconds: 5
   failureThreshold: 3
 
-# Environment variables for the development environment
-env:
-  - name: PORT
-    value: "8081"
-  - name: AUTH_SERVICE_URL
-    value: "http://e2e-app.dev:8080"
-  - name: AUTH_GRPC_ADDR
-    value: "e2e-app.dev:50051"
+# Application configuration for development environment
+config:
+  APP_ENV: development
+  MOCK_DB: "false"
+  LOG_LEVEL: debug
+  PORT: 8081
+  AUTH_SERVICE_URL: "http://e2e-app:8080"
+  AUTH_GRPC_ADDR: "e2e-app:50051"
 
 # Database configuration for development
 database:
+  existingSecret: ""
+  
+# Enable PostgreSQL dependency for development
+postgresql:
   enabled: true
-  type: postgres
-  host: postgres-profile-dev
-  port: 5432
-  name: e2e_profile_dev
-  user: dev_user
-  existingSecret: profile-db-credentials-dev
+  auth:
+    username: dev_user
+    password: dev_password
+    database: e2e_profile_dev
+  primary:
+    persistence:
+      size: 1Gi
