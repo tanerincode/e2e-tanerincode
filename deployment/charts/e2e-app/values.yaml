@@ -85,16 +85,30 @@ config:
   healthCheckPath: "/health"
   maxRequestsPerSecond: "100"
   timeoutSeconds: "30"
+  mockDB: "false"  # Set to "true" to use mock database in development
 
 # Database configuration
 database:
-  enabled: true
+  enabled: true  # Set to false to disable PostgreSQL dependency
   type: postgres
-  host: postgres
+  host: "{{ .Release.Name }}-postgresql"  # Uses the released PostgreSQL hostname
   port: 5432
   name: e2e_app
   user: postgres
-  existingSecret: auth-db-credentials
+  password: postgres  # Default password, should be overridden in production
+  existingSecret: ""  # Set this to use an existing secret instead of creating one
+
+# PostgreSQL chart configuration
+postgresql:
+  enabled: true  # Controls the PostgreSQL dependency
+  auth:
+    username: postgres
+    password: postgres  # Will be overridden in production
+    database: e2e_app
+  primary:
+    persistence:
+      enabled: true
+      size: 1Gi
   
 # JWT configuration  
 jwt:

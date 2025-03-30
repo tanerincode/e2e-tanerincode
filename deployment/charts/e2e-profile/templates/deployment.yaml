@@ -13,10 +13,12 @@ spec:
       {{- include "e2e-profile.selectorLabels" . | nindent 6 }}
   template:
     metadata:
-      {{- with .Values.podAnnotations }}
       annotations:
+        checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
+        checksum/secret: {{ include (print $.Template.BasePath "/secret.yaml") . | sha256sum }}
+        {{- with .Values.podAnnotations }}
         {{- toYaml . | nindent 8 }}
-      {{- end }}
+        {{- end }}
       labels:
         {{- include "e2e-profile.labels" . | nindent 8 }}
         {{- with .Values.podLabels }}
@@ -37,25 +39,52 @@ spec:
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           env:
-            {{- if .Values.env }}
-            {{- toYaml .Values.env | nindent 12 }}
-            {{- end }}
+            # Application environment
+            - name: APP_ENV
+              value: {{ .Values.config.APP_ENV | quote }}
+            - name: MOCK_DB
+              value: {{ .Values.config.MOCK_DB | quote }}
+            - name: LOG_LEVEL
+              value: {{ .Values.config.LOG_LEVEL | quote }}
+            - name: PORT
+              value: {{ .Values.config.PORT | quote }}
+            - name: AUTH_SERVICE_URL
+              value: {{ .Values.config.AUTH_SERVICE_URL | quote }}
+            - name: AUTH_GRPC_ADDR
+              value: {{ .Values.config.AUTH_GRPC_ADDR | quote }}
+            
             # Database environment variables
             - name: DB_HOST
+              {{- if .Values.postgresql.enabled }}
+              value: "{{ .Release.Name }}-postgresql"
+              {{- else }}
               value: {{ .Values.database.host | quote }}
+              {{- end }}
             - name: DB_PORT
-              value: {{ .Values.database.port | quote }}
+              value: "5432"
             - name: DB_NAME
+              {{- if .Values.postgresql.enabled }}
+              value: {{ .Values.postgresql.auth.database | quote }}
+              {{- else }}
               value: {{ .Values.database.name | quote }}
+              {{- end }}
             - name: DB_USER
               valueFrom:
                 secretKeyRef:
+                  {{- if .Values.database.existingSecret }}
                   name: {{ .Values.database.existingSecret }}
+                  {{- else }}
+                  name: {{ include "e2e-profile.fullname" . }}-db-credentials
+                  {{- end }}
                   key: username
             - name: DB_PASSWORD
               valueFrom:
                 secretKeyRef:
+                  {{- if .Values.database.existingSecret }}
                   name: {{ .Values.database.existingSecret }}
+                  {{- else }}
+                  name: {{ include "e2e-profile.fullname" . }}-db-credentials
+                  {{- end }}
                   key: password
           ports:
             - name: http

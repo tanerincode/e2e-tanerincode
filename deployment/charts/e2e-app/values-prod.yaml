@@ -49,14 +49,41 @@ config:
   readinessCheckPath: "/ready"
   maxRequestsPerSecond: "200"
   timeoutSeconds: "30"
+  mockDB: "false"  # Ensure no mock DB in production
 
-# Production secrets (replace with actual values)
+# Database configuration for production
+database:
+  enabled: true  # Enable PostgreSQL dependency in production
+  type: postgres
+  host: "{{ .Release.Name }}-postgresql"  # Uses the released PostgreSQL hostname
+  port: 5432
+  name: e2e_app_prod
+  user: e2e_app
+  existingSecret: "e2e-app-db-credentials"  # Reference existing secret for credentials
+
+# Configure PostgreSQL for production
+postgresql:
+  enabled: true
+  auth:
+    username: e2e_app
+    password: null  # Will be provided via external secrets management
+    database: e2e_app_prod
+    existingSecret: "e2e-app-db-credentials"
+  primary:
+    persistence:
+      enabled: true
+      size: 8Gi
+    resources:
+      requests:
+        memory: "512Mi"
+        cpu: "250m"
+      limits:
+        memory: "1Gi"
+        cpu: "500m"
+  metrics:
+    enabled: true  # Enable PostgreSQL metrics exporter
+  
+# Create a secret for database credentials (should be managed by external secrets in real prod)
 secrets:
-  dbHost: "prod-db.example.com"
-  dbPort: "5432"
-  dbName: "proddb"
-  dbUser: "produser"
-  # dbPassword: set this via CI/CD or command line
-  # apiKey: set this via CI/CD or command line
-  # apiSecret: set this via CI/CD or command line
-  # jwtSecret: set this via CI/CD or command line
+  create: true
+  dbPasswordKey: "postgresql-password"

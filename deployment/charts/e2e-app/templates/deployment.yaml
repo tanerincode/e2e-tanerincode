@@ -33,6 +33,10 @@ spec:
           resources:
             {{- toYaml .Values.resources | nindent 12 }}
           env:
+            - name: APP_ENV
+              value: {{ .Values.config.appEnv | quote }}
+            - name: MOCK_DB
+              value: {{ .Values.config.mockDB | quote }}
             - name: DB_HOST
               value: {{ .Values.database.host | quote }}
             - name: DB_PORT
@@ -42,15 +46,34 @@ spec:
             - name: DB_USER
               valueFrom:
                 secretKeyRef:
+                  {{- if .Values.database.existingSecret }}
                   name: {{ .Values.database.existingSecret }}
+                  {{- else }}
+                  name: {{ include "e2e-app.fullname" . }}-db-credentials
+                  {{- end }}
                   key: username
             - name: DB_PASSWORD
               valueFrom:
                 secretKeyRef:
+                  {{- if .Values.database.existingSecret }}
                   name: {{ .Values.database.existingSecret }}
+                  {{- else }}
+                  name: {{ include "e2e-app.fullname" . }}-db-credentials
+                  {{- end }}
                   key: password
             - name: JWT_SECRET
+              {{- if .Values.jwt.secret }}
+              valueFrom:
+                secretKeyRef:
+                  {{- if .Values.database.existingSecret }}
+                  name: {{ .Values.database.existingSecret }}
+                  {{- else }}
+                  name: {{ include "e2e-app.fullname" . }}-db-credentials
+                  {{- end }}
+                  key: jwt-secret
+              {{- else }}
               value: {{ .Values.jwt.secret | quote }}
+              {{- end }}
             - name: JWT_EXPIRATION
               value: {{ .Values.jwt.expiration | quote }}
             - name: REFRESH_EXPIRATION

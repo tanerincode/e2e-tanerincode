@@ -93,23 +93,36 @@ autoscaling:
   # targetMemoryUtilizationPercentage: 80
 
 # Environment variables for the application
-env:
-  - name: PORT
-    value: "8081"
-  - name: AUTH_SERVICE_URL
-    value: "http://e2e-app:8080"
-  - name: AUTH_GRPC_ADDR
-    value: "e2e-app:50051"
+config:
+  appEnv: production
+  logLevel: info
+  port: "8081"
+  authServiceURL: "http://e2e-app:8080"
+  authGrpcAddr: "e2e-app:50051"
+  mockDB: "false"  # Set to "true" to use mock database in development
 
 # Database configuration
 database:
-  enabled: true
+  enabled: true  # Set to false to disable PostgreSQL dependency
   type: postgres
-  host: postgres-profile
+  host: "{{ .Release.Name }}-postgresql"  # Uses the released PostgreSQL hostname
   port: 5432
   name: e2e_profile
   user: postgres
-  existingSecret: profile-db-credentials
+  password: postgres  # Default password, should be overridden in production
+  existingSecret: ""  # Set this to use an existing secret instead of creating one
+
+# PostgreSQL chart configuration
+postgresql:
+  enabled: true  # Controls the PostgreSQL dependency
+  auth:
+    username: postgres
+    password: postgres  # Will be overridden in production
+    database: e2e_profile
+  primary:
+    persistence:
+      enabled: true
+      size: 1Gi
   
 # Additional volumes on the output Deployment definition.
 volumes: []
