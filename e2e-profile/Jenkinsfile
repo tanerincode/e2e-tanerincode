@@ -1,0 +1,183 @@
+pipeline {
+    agent {
+        kubernetes {
+            yaml """
+apiVersion: v1
+kind: Pod
+metadata:
+  labels:
+    app: e2e-profile-pipeline
+spec:
+  containers:
+  - name: golang
+    image: golang:1.20-alpine
+    command:
+    - cat
+    tty: true
+  - name: docker
+    image: docker:20.10.16-dind
+    command:
+    - cat
+    tty: true
+    privileged: true
+    volumeMounts:
+    - name: docker-socket
+      mountPath: /var/run/docker.sock
+  - name: kubectl
+    image: bitnami/kubectl:latest
+    command:
+    - cat
+    tty: true
+  - name: helm
+    image: alpine/helm:latest
+    command:
+    - cat
+    tty: true
+  volumes:
+  - name: docker-socket
+    hostPath:
+      path: /var/run/docker.sock
+"""
+        }
+    }
+    
+    environment {
+        APP_NAME = 'e2e-profile'
+        DOCKER_REGISTRY = 'docker.io'
+        DOCKER_IMAGE = "${DOCKER_REGISTRY}/tanerincode/${APP_NAME}"
+        DOCKER_CREDENTIALS_ID = 'docker-credentials'
+        HELM_CHART_PATH = '../deployment/charts/e2e-profile'
+        KUBECONFIG_ID = 'kubeconfig'
+    }
+    
+    stages {
+        stage('Checkout') {
+            steps {
+                checkout scm
+            }
+        }
+        
+        stage('Unit Tests') {
+            steps {
+                container('golang') {
+                    dir('e2e-profile') {
+                        sh 'go mod download'
+                        sh 'go test -v ./...'
+                    }
+                }
+            }
+        }
+        
+        stage('Code Quality') {
+            steps {
+                container('golang') {
+                    dir('e2e-profile') {
+                        sh 'go vet ./...'
+                        // Add more static analysis if needed
+                    }
+                }
+            }
+        }
+        
+        stage('Build Docker Image') {
+            steps {
+                container('docker') {
+                    dir('e2e-profile') {
+                        withCredentials([usernamePassword(credentialsId: "${DOCKER_CREDENTIALS_ID}", passwordVariable: 'DOCKER_PASSWORD', usernameVariable: 'DOCKER_USERNAME')]) {
+                            sh "docker login ${DOCKER_REGISTRY} -u ${DOCKER_USERNAME} -p ${DOCKER_PASSWORD}"
+                            sh "docker build -t ${DOCKER_IMAGE}:${BUILD_NUMBER} -t ${DOCKER_IMAGE}:latest ."
+                        }
+                    }
+                }
+            }
+        }
+        
+        stage('Security Scan') {
+            steps {
+                container('docker') {
+                    dir('e2e-profile') {
+                        sh "echo 'Running security scan on image ${DOCKER_IMAGE}:${BUILD_NUMBER}'"
+                        // Add real security scanning with tools like Trivy or Anchore
+                        // Example: sh "trivy image ${DOCKER_IMAGE}:${BUILD_NUMBER} --severity HIGH,CRITICAL"
+                    }
+                }
+            }
+        }
+        
+        stage('Push Docker Image') {
+            steps {
+                container('docker') {
+                    withCredentials([usernamePassword(credentialsId: "${DOCKER_CREDENTIALS_ID}", passwordVariable: 'DOCKER_PASSWORD', usernameVariable: 'DOCKER_USERNAME')]) {
+                        sh "docker push ${DOCKER_IMAGE}:${BUILD_NUMBER}"
+                        sh "docker push ${DOCKER_IMAGE}:latest"
+                    }
+                }
+            }
+        }
+        
+        stage('Deploy to Dev') {
+            when {
+                branch 'develop'
+            }
+            steps {
+                container('helm') {
+                    withCredentials([file(credentialsId: "${KUBECONFIG_ID}", variable: 'KUBECONFIG')]) {
+                        sh "helm upgrade --install ${APP_NAME} ${HELM_CHART_PATH} --set image.tag=${BUILD_NUMBER} -f ${HELM_CHART_PATH}/values-dev.yaml --namespace dev"
+                    }
+                }
+            }
+        }
+        
+        stage('Integration Tests') {
+            when {
+                branch 'develop'
+            }
+            steps {
+                container('golang') {
+                    dir('e2e-profile') {
+                        sh 'echo "Running integration tests against dev environment"'
+                        // Add integration test commands here
+                    }
+                }
+            }
+        }
+        
+        stage('Approve Production Deployment') {
+            when {
+                branch 'main'
+            }
+            steps {
+                timeout(time: 24, unit: 'HOURS') {
+                    input message: 'Deploy to production?', ok: 'Yes'
+                }
+            }
+        }
+        
+        stage('Deploy to Production') {
+            when {
+                branch 'main'
+            }
+            steps {
+                container('helm') {
+                    withCredentials([file(credentialsId: "${KUBECONFIG_ID}", variable: 'KUBECONFIG')]) {
+                        sh "helm upgrade --install ${APP_NAME} ${HELM_CHART_PATH} --set image.tag=${BUILD_NUMBER} -f ${HELM_CHART_PATH}/values-prod.yaml --namespace prod"
+                    }
+                }
+            }
+        }
+    }
+    
+    post {
+        always {
+            junit '**/test-results/*.xml'
+            cleanWs()
+        }
+        success {
+            echo 'Build completed successfully!'
+        }
+        failure {
+            echo 'Build failed!'
+            // Add notifications (email, Slack, etc.)
+        }
+    }
+}
