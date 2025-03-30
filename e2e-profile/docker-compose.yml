@@ -1,0 +1,42 @@
+version: '3.8'
+
+services:
+  profile-app:
+    build: .
+    ports:
+      - "8081:8081"
+    environment:
+      - AUTH_SERVICE_URL=http://e2e-app:8080
+      - AUTH_GRPC_ADDR=e2e-app:50051
+      - DB_HOST=postgres-profile
+      - DB_PORT=5432
+      - DB_USER=postgres
+      - DB_PASSWORD=postgres
+      - DB_NAME=e2e_profile
+    depends_on:
+      - postgres-profile
+    networks:
+      - profile-network
+      - e2e-network  # This will be external to connect to the auth service
+
+  postgres-profile:
+    image: postgres:15-alpine
+    ports:
+      - "5433:5432"  # Use different port to avoid conflict with e2e-app postgres
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=e2e_profile
+    volumes:
+      - postgres_profile_data:/var/lib/postgresql/data
+    networks:
+      - profile-network
+
+volumes:
+  postgres_profile_data:
+
+networks:
+  profile-network:
+    driver: bridge
+  e2e-network:
+    external: true  # This connects to the network created by the e2e-app

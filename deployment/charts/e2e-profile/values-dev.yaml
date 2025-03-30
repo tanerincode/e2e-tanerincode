@@ -1,0 +1,69 @@
+# Development environment values for e2e-profile
+replicaCount: 1
+
+image:
+  repository: e2e-profile
+  tag: latest
+  pullPolicy: Always
+
+service:
+  type: ClusterIP
+  port: 8081
+
+# Development Ingress configuration
+ingress:
+  enabled: true
+  className: "nginx"
+  annotations:
+    kubernetes.io/ingress.class: nginx
+  hosts:
+    - host: dev.profile.e2e-app.local
+      paths:
+        - path: /
+          pathType: Prefix
+  tls: []
+
+resources:
+  requests:
+    cpu: 50m
+    memory: 64Mi
+  limits:
+    cpu: 100m
+    memory: 128Mi
+
+livenessProbe:
+  httpGet:
+    path: /health
+    port: http
+  initialDelaySeconds: 10
+  periodSeconds: 10
+  timeoutSeconds: 5
+  failureThreshold: 3
+
+readinessProbe:
+  httpGet:
+    path: /health
+    port: http
+  initialDelaySeconds: 5
+  periodSeconds: 10
+  timeoutSeconds: 5
+  failureThreshold: 3
+
+# Environment variables for the development environment
+env:
+  - name: PORT
+    value: "8081"
+  - name: AUTH_SERVICE_URL
+    value: "http://e2e-app.dev:8080"
+  - name: AUTH_GRPC_ADDR
+    value: "e2e-app.dev:50051"
+
+# Database configuration for development
+database:
+  enabled: true
+  type: postgres
+  host: postgres-profile-dev
+  port: 5432
+  name: e2e_profile_dev
+  user: dev_user
+  existingSecret: profile-db-credentials-dev

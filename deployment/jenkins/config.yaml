@@ -1,0 +1,90 @@
+jenkins:
+  # Jenkins Kubernetes plugin configuration
+  clouds:
+    kubernetes:
+      containerCapStr: "10"
+      jenkinsTunnel: "jenkins-agent:50000"
+      jenkinsUrl: "http://jenkins:8080"
+      maxRequestsPerHostStr: "32"
+      name: "kubernetes"
+      namespace: "jenkins"
+      skipTlsVerify: true
+
+  # Jenkins security configuration
+  securityRealm:
+    local:
+      allowsSignup: false
+      users:
+        - id: "admin"
+          password: "${JENKINS_ADMIN_PASSWORD}"
+
+  # Jenkins authorization configuration
+  authorizationStrategy:
+    roleBased:
+      roles:
+        global:
+          - name: "admin"
+            permissions:
+              - "Overall/Administer"
+          - name: "developer"
+            permissions:
+              - "Overall/Read"
+              - "Job/Build"
+              - "Job/Read"
+              - "Job/Workspace"
+
+  # Pipeline configuration
+  pipeline:
+    defaultVersion: "2.9.3"
+    libraries:
+      - name: "shared-library"
+        defaultVersion: "main"
+        implicit: true
+        allowVersionOverride: true
+        includeInChangesets: true
+
+  # Tool configurations
+  tools:
+    git:
+      installations:
+        - name: "Default"
+          home: "git"
+    
+    maven:
+      installations:
+        - name: "Maven 3"
+          home: "/usr/share/maven"
+
+    docker:
+      installations:
+        - name: "Default"
+          properties:
+            - installSource:
+                installers:
+                  - docker:
+                      version: "latest"
+
+  # Credentials configuration
+  credentials:
+    system:
+      domainCredentials:
+        - domain:
+            name: "global"
+          credentials:
+            - usernamePassword:
+                scope: GLOBAL
+                id: "docker-registry"
+                username: "${DOCKER_REGISTRY_USER}"
+                password: "${DOCKER_REGISTRY_PASSWORD}"
+                description: "Docker Registry Credentials"
+            - usernamePassword:
+                scope: GLOBAL
+                id: "github"
+                username: "${GITHUB_USER}"
+                password: "${GITHUB_TOKEN}"
+                description: "GitHub Credentials"
+            - kubeconfigContent:
+                scope: GLOBAL
+                id: "kubeconfig"
+                content: "${KUBE_CONFIG}"
+                description: "Kubernetes Config"

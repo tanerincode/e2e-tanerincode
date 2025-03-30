@@ -1,0 +1,83 @@
+# Production environment values for e2e-profile
+replicaCount: 3
+
+image:
+  repository: e2e-profile
+  tag: stable
+  pullPolicy: Always
+
+service:
+  type: ClusterIP
+  port: 8081
+
+# Production Ingress configuration
+ingress:
+  enabled: true
+  className: "nginx"
+  annotations:
+    kubernetes.io/ingress.class: nginx
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
+  hosts:
+    - host: profile.e2e-app.example.com
+      paths:
+        - path: /
+          pathType: Prefix
+  tls:
+    - secretName: e2e-profile-tls
+      hosts:
+        - profile.e2e-app.example.com
+
+resources:
+  requests:
+    cpu: 200m
+    memory: 256Mi
+  limits:
+    cpu: 500m
+    memory: 512Mi
+
+livenessProbe:
+  httpGet:
+    path: /health
+    port: http
+  initialDelaySeconds: 30
+  periodSeconds: 10
+  timeoutSeconds: 5
+  failureThreshold: 3
+
+readinessProbe:
+  httpGet:
+    path: /health
+    port: http
+  initialDelaySeconds: 5
+  periodSeconds: 10
+  timeoutSeconds: 5
+  failureThreshold: 3
+
+# Environment variables for the production environment
+env:
+  - name: PORT
+    value: "8081"
+  - name: AUTH_SERVICE_URL
+    value: "http://e2e-app:8080"
+  - name: AUTH_GRPC_ADDR
+    value: "e2e-app:50051"
+
+# Database configuration for production
+database:
+  enabled: true
+  type: postgres
+  host: postgres-profile
+  port: 5432
+  name: e2e_profile
+  user: prod_user
+  existingSecret: profile-db-credentials-prod
+
+# Production specific autoscaling settings
+autoscaling:
+  enabled: true
+  minReplicas: 3
+  maxReplicas: 10
+  targetCPUUtilizationPercentage: 70
+  targetMemoryUtilizationPercentage: 80

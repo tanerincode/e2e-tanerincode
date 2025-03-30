@@ -1,0 +1,124 @@
+pipeline {
+    agent {
+        kubernetes {
+            yaml '''
+                apiVersion: v1
+                kind: Pod
+                metadata:
+                  labels:
+                    app: jenkins-agent
+                spec:
+                  containers:
+                  - name: docker
+                    image: docker:dind
+                    securityContext:
+                      privileged: true
+                    volumeMounts:
+                      - name: docker-socket
+                        mountPath: /var/run/docker.sock
+                  - name: kubectl
+                    image: bitnami/kubectl:latest
+                    command:
+                    - cat
+                    tty: true
+                  - name: helm
+                    image: alpine/helm:latest
+                    command:
+                    - cat
+                    tty: true
+                  volumes:
+                    - name: docker-socket
+                      hostPath:
+                        path: /var/run/docker.sock
+            '''
+        }
+    }
+
+    environment {
+        DOCKER_REGISTRY = 'your-registry'
+        APP_NAME = 'e2e-app'
+        GIT_COMMIT_SHORT = "${env.GIT_COMMIT[0..7]}"
+        NAMESPACE = "${BRANCH_NAME == 'main' ? 'production' : 'development'}"
+    }
+
+    stages {
+        stage('Checkout') {
+            steps {
+                checkout scm
+            }
+        }
+
+        stage('Build Docker Image') {
+            steps {
+                container('docker') {
+                    script {
+                        def dockerTag = "${BRANCH_NAME == 'main' ? 'latest' : GIT_COMMIT_SHORT}"
+                        sh """
+                            docker build -t ${DOCKER_REGISTRY}/${APP_NAME}:${dockerTag} .
+                            docker push ${DOCKER_REGISTRY}/${APP_NAME}:${dockerTag}
+                        """
+                    }
+                }
+            }
+        }
+
+        stage('Run Tests') {
+            steps {
+                container('docker') {
+                    sh 'echo "Running tests..."'
+                    // Add your test commands here
+                }
+            }
+        }
+
+        stage('Security Scan') {
+            steps {
+                container('docker') {
+                    sh 'echo "Running security scan..."'
+                    // Add security scanning commands here
+                }
+            }
+        }
+
+        stage('Deploy to Kubernetes') {
+            steps {
+                container('helm') {
+                    script {
+                        def valueFile = "${BRANCH_NAME == 'main' ? 'values-prod.yaml' : 'values-dev.yaml'}"
+                        sh """
+                            helm upgrade --install ${APP_NAME} ./deployment/charts/e2e-app \
+                                -f ./deployment/charts/e2e-app/${valueFile} \
+                                --namespace ${NAMESPACE} \
+                                --set image.tag=${GIT_COMMIT_SHORT} \
+                                --create-namespace
+                        """
+                    }
+                }
+            }
+        }
+
+        stage('Verify Deployment') {
+            steps {
+                container('kubectl') {
+                    sh """
+                        kubectl rollout status deployment/${APP_NAME} -n ${NAMESPACE}
+                        kubectl get all -n ${NAMESPACE}
+                    """
+                }
+            }
+        }
+    }
+
+    post {
+        success {
+            echo 'Pipeline succeeded! Application deployed successfully.'
+        }
+        failure {
+            echo 'Pipeline failed! Check the logs for details.'
+        }
+        always {
+            echo 'Cleaning up workspace...'
+            cleanWs()
+        }
+    }
+}

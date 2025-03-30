@@ -1,0 +1,42 @@
+version: '3.8'
+
+services:
+  app:
+    build: .
+    ports:
+      - "8080:8080"
+      - "50051:50051"
+    environment:
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_USER=postgres
+      - DB_PASSWORD=postgres
+      - DB_NAME=e2e_app
+      - JWT_SECRET=your-secret-key
+      - JWT_EXPIRATION=24h
+      - REFRESH_EXPIRATION=168h
+      - GRPC_PORT=50051
+    depends_on:
+      - postgres
+    networks:
+      - e2e-network
+
+  postgres:
+    image: postgres:15-alpine
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=e2e_app
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - e2e-network
+
+volumes:
+  postgres_data:
+
+networks:
+  e2e-network:
+    driver: bridge

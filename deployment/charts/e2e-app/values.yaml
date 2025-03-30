@@ -1,0 +1,103 @@
+# Default values for e2e-app
+replicaCount: 1
+
+image:
+  repository: e2e-app
+  tag: latest
+  pullPolicy: Always
+
+nameOverride: ""
+fullnameOverride: ""
+
+serviceAccount:
+  create: true
+  name: ""
+
+podSecurityContext:
+  runAsNonRoot: true
+  runAsUser: 1000
+  fsGroup: 2000
+
+containerSecurityContext:
+  allowPrivilegeEscalation: false
+  capabilities:
+    drop:
+      - ALL
+  readOnlyRootFilesystem: true
+
+service:
+  type: ClusterIP
+  port: 8080
+  grpcPort: 50051
+  
+# Ingress configuration
+ingress:
+  enabled: true
+  className: "nginx"
+  annotations:
+    kubernetes.io/ingress.class: nginx
+    # kubernetes.io/tls-acme: "true"
+    # cert-manager.io/cluster-issuer: "letsencrypt-prod"
+  hosts:
+    - host: api.e2e-app.local
+      paths:
+        - path: /
+          pathType: Prefix
+  tls: []
+    # - secretName: e2e-app-tls
+    #   hosts:
+    #     - e2e-app.local
+
+resources:
+  requests:
+    cpu: 100m
+    memory: 128Mi
+  limits:
+    cpu: 500m
+    memory: 256Mi
+
+livenessProbe:
+  httpGet:
+    path: /health
+    port: http
+  initialDelaySeconds: 30
+  periodSeconds: 10
+  timeoutSeconds: 5
+  failureThreshold: 3
+
+readinessProbe:
+  httpGet:
+    path: /health
+    port: http
+  initialDelaySeconds: 15
+  periodSeconds: 5
+  timeoutSeconds: 3
+  failureThreshold: 3
+
+config:
+  appEnv: production
+  logLevel: info
+  apiVersion: v1
+  serverPort: "8080"
+  grpcPort: "50051"
+  enableMetrics: "true"
+  metricsPath: "/metrics"
+  healthCheckPath: "/health"
+  maxRequestsPerSecond: "100"
+  timeoutSeconds: "30"
+
+# Database configuration
+database:
+  enabled: true
+  type: postgres
+  host: postgres
+  port: 5432
+  name: e2e_app
+  user: postgres
+  existingSecret: auth-db-credentials
+  
+# JWT configuration  
+jwt:
+  secret: "your-secret-key"
+  expiration: "24h"
+  refreshExpiration: "168h"

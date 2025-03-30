@@ -1,0 +1,29 @@
+syntax = "proto3";
+package auth;
+
+option go_package = "github.com/tanerincode/e2e-profile/internal/grpc/proto/auth";
+
+// AuthService provides authentication validation
+service AuthService {
+  // ValidateToken validates a JWT token and returns user information if valid
+  rpc ValidateToken(TokenRequest) returns (TokenResponse) {}
+}
+
+// TokenRequest contains the token to validate
+message TokenRequest {
+  string token = 1;
+}
+
+// TokenResponse returns the validation result and user info
+message TokenResponse {
+  bool valid = 1;
+  string user_id = 2;
+  string email = 3;
+  Error error = 4;
+}
+
+// Error details if token validation fails
+message Error {
+  string code = 1;
+  string message = 2;
+}

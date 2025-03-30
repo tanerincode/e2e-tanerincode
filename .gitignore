@@ -1,0 +1,70 @@
+# Go specific
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+*.test
+*.out
+go.work
+
+# Mac specific
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+
+# IDE specific
+.idea/
+.vscode/
+.cursor/
+*.swp
+*.swo
+
+# Runtime data
+*.log
+*.pid
+*.seed
+*.pid.lock
+
+# Kubernetes and Helm
+.kube/
+charts/**/charts/
+*.tgz
+kubeconfig
+
+# Environment variables
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Dependency directories
+vendor/
+node_modules/
+build/
+dist/
+
+# Generated files
+bin/
+*/bin/
+tmp/
+.tmp/
+
+# Debug files
+debug
+
+# Database
+*.db
+*.sqlite
+*.sqlite3
+
+# Secrets
+*secret*
+*credential*
+!*secret*.example
+!*credential*.example
+!**/base/secret.yaml
+!**/templates/secret.yaml
+!**/templates/_secrets.tpl
