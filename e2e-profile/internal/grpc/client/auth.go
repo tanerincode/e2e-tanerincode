@@ -18,8 +18,8 @@ type AuthClient struct {
 
 // NewAuthClient creates a new gRPC client for the auth service
 func NewAuthClient(address string) (*AuthClient, error) {
-	// Use the recommended NewClient method
-	conn, err := grpc.NewClient(
+	// Connect to the server
+	conn, err := grpc.Dial(
 		address,
 		grpc.WithTransportCredentials(insecure.NewCredentials()),
 	)
@@ -59,4 +59,11 @@ func (c *AuthClient) Close() error {
 		return c.conn.Close()
 	}
 	return nil
+}
+
+// SetClientForTesting sets the client and connection for testing
+// This method should only be used in tests
+func (c *AuthClient) SetClientForTesting(client pb.AuthServiceClient, conn *grpc.ClientConn) {
+	c.client = client
+	c.conn = conn
 }
