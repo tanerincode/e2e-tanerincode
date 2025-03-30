@@ -1,10 +1,14 @@
-# CI/CD Pipeline - e2e-profile
+# CI/CD Pipeline - e2e-app
 
-This document describes the CI/CD pipeline setup for the e2e-profile service.
+This document describes the CI/CD pipeline setup for the e2e-app service.
 
 ## Pipeline Overview
 
-The CI/CD pipeline for this service uses Jenkins to automate the build, test, and deployment process. The pipeline is defined in the `Jenkinsfile` in the root of this repository.
+The CI/CD pipeline for this service uses Jenkins to automate the build, test, and deployment process. The pipeline is defined in the `Jenkinsfile` in the root of this service directory.
+
+### Directory Structure
+
+This service is part of a microservices architecture and is located in the `services/e2e-app` directory of the main project.
 
 ### Pipeline Stages
 

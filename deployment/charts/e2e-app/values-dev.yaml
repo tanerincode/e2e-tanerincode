@@ -8,7 +8,7 @@ image:
 
 service:
   type: ClusterIP
-  port: 80
+  port: 8080
   targetPort: 8080
 
 # Development Ingress configuration
@@ -70,10 +70,11 @@ postgresql:
 
 # Development secrets (replace with actual values)
 secrets:
-  dbHost: "dev-db.example.com"
+  dbHost: "{{ .Release.Name }}-postgresql"
   dbPort: "5432"
-  dbName: "devdb"
-  dbUser: "devuser"
+  dbName: "e2e_app_dev"
+  dbUser: "postgres"
+  dbPassword: "postgres"
   # dbPassword: set this via CI/CD or command line
   # apiKey: set this via CI/CD or command line
   # apiSecret: set this via CI/CD or command line

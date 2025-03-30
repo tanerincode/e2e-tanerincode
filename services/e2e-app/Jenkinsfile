@@ -60,7 +60,7 @@ spec:
         stage('Unit Tests') {
             steps {
                 container('golang') {
-                    dir('e2e-app') {
+                    dir('services/e2e-app') {
                         sh 'go mod download'
                         sh 'go test -v ./...'
                     }
@@ -71,7 +71,7 @@ spec:
         stage('Code Quality') {
             steps {
                 container('golang') {
-                    dir('e2e-app') {
+                    dir('services/e2e-app') {
                         sh 'go vet ./...'
                         // Add more static analysis if needed
                     }
@@ -82,7 +82,7 @@ spec:
         stage('Build Docker Image') {
             steps {
                 container('docker') {
-                    dir('e2e-app') {
+                    dir('services/e2e-app') {
                         withCredentials([usernamePassword(credentialsId: "${DOCKER_CREDENTIALS_ID}", passwordVariable: 'DOCKER_PASSWORD', usernameVariable: 'DOCKER_USERNAME')]) {
                             sh "docker login ${DOCKER_REGISTRY} -u ${DOCKER_USERNAME} -p ${DOCKER_PASSWORD}"
                             sh "docker build -t ${DOCKER_IMAGE}:${BUILD_NUMBER} -t ${DOCKER_IMAGE}:latest ."
@@ -95,7 +95,7 @@ spec:
         stage('Security Scan') {
             steps {
                 container('docker') {
-                    dir('e2e-app') {
+                    dir('services/e2e-app') {
                         sh "echo 'Running security scan on image ${DOCKER_IMAGE}:${BUILD_NUMBER}'"
                         // Add real security scanning with tools like Trivy or Anchore
                         // Example: sh "trivy image ${DOCKER_IMAGE}:${BUILD_NUMBER} --severity HIGH,CRITICAL"
@@ -134,7 +134,7 @@ spec:
             }
             steps {
                 container('golang') {
-                    dir('e2e-app') {
+                    dir('services/e2e-app') {
                         sh 'echo "Running integration tests against dev environment"'
                         // Add integration test commands here
                     }

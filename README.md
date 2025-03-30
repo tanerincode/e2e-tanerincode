@@ -31,12 +31,13 @@ This project demonstrates a production-ready infrastructure setup with:
 │   ├── prerequisites.md  # System requirements & setup
 │   ├── local-k8s-setup.md # Local Kubernetes deployment
 │   └── diagrams/         # Architecture diagrams
-├── e2e-app/              # Authentication & User Service
-│   ├── cmd/              # Command line applications
-│   └── internal/         # Internal packages
-├── e2e-profile/          # Profile Service
-│   ├── cmd/              # Command line applications
-│   └── internal/         # Internal packages
+├── services/             # Microservices
+│   ├── e2e-app/          # Authentication & User Service
+│   │   ├── cmd/          # Command line applications
+│   │   └── internal/     # Internal packages
+│   └── e2e-profile/      # Profile Service
+│       ├── cmd/          # Command line applications
+│       └── internal/     # Internal packages
 └── examples/             # Example configurations
 ```
 

@@ -31,6 +31,13 @@ func NewAuthService(userRepo repository.UserRepository, cfg *config.Config) Auth
 }
 
 func (s *authService) Register(ctx context.Context, user *model.User) error {
+	// Hash the password before saving the user
+	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(user.Password), bcrypt.DefaultCost)
+	if err != nil {
+		return err
+	}
+	user.Password = string(hashedPassword)
+
 	return s.userRepo.Create(ctx, user)
 }
 
